@@ -1,5 +1,8 @@
 import React, {useState, useEffect} from 'react'
 import {getProducts} from "./helper/coreapicalls"
+import Base from "./Base";
+
+
 
 export default function Home(){
     const [products, setProducts] = useState([])
@@ -23,7 +26,7 @@ export default function Home(){
     }, [])
 
     return (
-        <din>
+        <Base title="Home page" description="Welcome to Mobicity">
             <h1>Home component</h1>
             <div className="row">
                 {products.map( (product,index) => {
@@ -34,6 +37,6 @@ export default function Home(){
                     )
                 })}
             </div>
-        </din>
+        </Base>
     )
 }
