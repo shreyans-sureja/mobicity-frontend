@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Base from "./Base";
 import Card from "./Card"
 import {loadCart} from "./helper/cartHelper"
+import Payment from "./Payment"
 
 const Cart = () => {
 
@@ -32,7 +33,7 @@ const Cart = () => {
     const loadCheckout = () =>{
         return(
             <div>
-                <h1>checkout</h1>
+                <Payment products={products} setReload={setReload} />
             </div>
         )
     }
