@@ -5,7 +5,7 @@ export const getCard = (userId,token) => {
         method: "POST",
       })
       .then((response) =>{
-        return response
+        return response.json()
       })
       .catch(err => console.log(err))
 }

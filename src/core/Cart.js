@@ -30,14 +30,6 @@ const Cart = () => {
         )
     }
 
-    const loadCheckout = () =>{
-        return(
-            <div>
-                <Payment products={products} setReload={setReload} />
-            </div>
-        )
-    }
-
     return (
         <Base title="Cart page" description="Welcome to checkout">
             <div className="row text-center">
@@ -45,7 +37,13 @@ const Cart = () => {
                     {loadAllProducts(products)}
                 </div>
                 <div className="col-6">
-                    {loadCheckout()}
+                    {products.length > 0 ? 
+                    (
+                        <Payment products={products} setReload={setReload}/>
+                    ) : 
+                    (
+                        <h3>Add something in cart</h3>
+                    )}
                 </div>
             </div>
         </Base>

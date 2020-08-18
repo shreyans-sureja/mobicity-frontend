@@ -7,6 +7,7 @@ import UserDashBoard from "./user/UserDashBoard"
 import Signin from "./user/Signin"
 import Cart from "./core/Cart"
 import Card from './core/Card'
+import Alert from '../src/alert'
 
 const Routes = () => {
     return(
@@ -16,6 +17,7 @@ const Routes = () => {
             <Route path="/signup" exact component={Signup} />
             <Route path="/signin" exact component={Signin} />
             <Route path="/cart" exact component={Cart} />
+            <Route path="/alert" exact component={Alert} />
             <PrivateRoutes path="/user/dashboard" exact component={UserDashBoard}/> 
         </Switch>
         </BrowserRouter>

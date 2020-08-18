@@ -3,7 +3,7 @@ import {API} from "../../backend"
 export const createOrder = (userId, token, orderData) =>{
     const formData = new FormData();
 
-    for(const name in formData){
+    for(const name in orderData){
         formData.append(name,orderData[name])
     }
 

@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react'
+import React, {useState, useEffect, createRef} from 'react'
 import {Redirect} from 'react-router-dom'
 import {cartEmpty} from "../core/helper/cartHelper"
 import {processPayment, getCard} from "../core/helper/paymentHelper"
@@ -15,28 +15,55 @@ const Payment = ({
         number : "",
         expiry : "",
         cvv : "",
+        name : "",
+        remember : "no",
         error : "",
         loading : false,
         success : false,
     });
 
-    const {number,expiry,cvv,error,success,loading} = info;
+    const {number,expiry,cvv,name,remember,error,success,loading} = info;
+
+    const handleChange = name => event => {
+        setInfo({...info,
+            error:false,[name] : 
+            event.target.value});
+    }
+
+    const changeCheckbox = name => event =>{
+        if(info.remember == "yes"){
+            setInfo({...info,remember : "no"});
+        }
+        else{
+            setInfo({...info,remember :"yes"})
+        }
+    }
 
     const userId = isAuthenticated && isAuthenticated().user.id;
     const token = isAuthenticated && isAuthenticated().token;
     
     const getSavedCard = (userId,token) =>{
         getCard(userId,token)
-        .then((res) => {
-            if(res.ok){
-                setInfo({
-                    ...info,
-                    number : res.json().number,
-                    expiry : res.json().expiry
-                })
+        .then((res) => { 
+            console.log(res['card'])
+            const storedCard = res['card']
+            let number = ""
+            let expiry = ""
+            let name = ""
+
+            if("name" in storedCard){
+                name = storedCard['name']
             }
+            if("number" in storedCard){
+                number = storedCard['number']
+            }
+            if("expiry_month" in storedCard && "expiry_year" in storedCard){
+                expiry = String(storedCard['expiry_month'] + "/" + storedCard['expiry_year'])
+            }            
+            setInfo({number,expiry,name})
+    
         })
-        console.log(number)
+        console.log(info.name)
     }
 
     useEffect(() =>{
@@ -50,91 +77,72 @@ const Payment = ({
         })
         return amount;
     }
- 
-    const handleChange = name => event => {
-        setInfo({...info,error:false,[name] : event.target.value});
-    }
 
     const onSubmit = (event) => {
         event.preventDefault();
-        getCard(userId,token)
-        .then((r) =>{
-            console.log("HIiiiiiiii")
-            console.log(r)
+        setInfo({loading : true})
+        const paymentData = {
+            "cardNum" : info.number,
+            "expiry" : info.expiry,
+            "cvv" : info.cvv,
+            "name" : info.name,
+            "amount" : getAmount(),
+            "remember" : info.remember
+        }
+        processPayment(userId,token,paymentData)
+        .then((response) =>{
+            if(!response.ok){
+                console.log("Payment failed!!")
+                alert("payment failed")
+            }
+            else{
+                console.log("Payment Success!")
+                setInfo({...info,
+                    success : true,
+                    loading : false
+                })
+                let product_names = ""
+                products.forEach(function(item){
+                    product_names += item.name + ", "
+                });
+                const orderData = {
+                    products : product_names,
+                    transaction_id : "",
+                    amount : getAmount()
+                }
+
+                console.log("DATAAAAAAAAA")
+                console.log(orderData)
+
+                createOrder(userId,token,orderData)
+                .then(response => {
+                    console.log(response)
+                })
+                .catch(e => {
+                    console.log(e)
+                })
+                cartEmpty(() => {
+                    console.log("Cart is emptyed out!")
+                })
+                setReload(!reload)
+                alert("payment success")
+            }
         })
-    //     setValues({ ...values, error: false });
-    //     payment({number,expiry,cvv})
-    //     .then((response) => {
-    //         if(response.ok){
-    //             console.log("OKKKKKKKKKKKKKKKK")
-    //             cartEmpty(() => {});
-    //             setValues({
-    //                 ...values,
-    //                 number : "",
-    //                 expiry : "",
-    //                 cvv : "",
-    //                 error : false,
-    //                 success : true
-    //             })                
-    //         }
-    //         else{
-    //             console.log("NOOOOOOOOO")
-    //             setValues({
-    //                 ...values,
-    //                 number : "",
-    //                 expiry : "",
-    //                 cvv : "",
-    //                 error : true,
-    //                 success : false
-    //             })
-    //         }
-    //       })
-    //     .catch((e) => console.log(e));
+        .catch()
     }
-
-    const errorMessage = () => {
-        return(
-            <div className="row">
-                <div className="col-md-6 offset-sm-3 text-left">
-                    <div
-                        className="alert alert-danger"
-                        style = {{display: error ? "" : "none"}}
-                    >
-                        Something went wrong.. Try again later.
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    const successMessage = () => {
-        return(
-            <div className="row">
-                <div className="col-md-6 offset-sm-3 text-left">
-                    <div
-                        className="alert alert-success"
-                        style = {{display: success ? "" : "none"}}
-                    >
-                        Payment successful 
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
 
     const PymentForm = () => {
         return (
           <div className="row">
-            <h3>Your bill is {getAmount()}</h3>
             <div className="col-md-6 offset-sm-3 text-left">
               <form>
                 <div className="form-group">
                   <label className="text-light">Card Number</label>
                   <input
                     className="form-control"
-                    info={number}
+                    info ={number}
                     onChange={handleChange("number")}
+                    value = {number}
                     type="text"
                   />
                 </div>
@@ -144,6 +152,7 @@ const Payment = ({
                     className="form-control"
                     info={expiry}
                     onChange={handleChange("expiry")}
+                    value = {expiry}
                     type="text"
                   />
                 </div>
@@ -156,6 +165,25 @@ const Payment = ({
                     type="password"
                   />
                 </div>
+                <div className="form-group">
+                  <label className="text-light">Holder's name</label>
+                  <input
+                    className="form-control"
+                    info = {name}
+                    value = {name}
+                    onChange={handleChange("name")}
+                    type="text"
+                  />
+                </div>
+                <div className="form-check">
+                    <input className="form-check-input" 
+                    type="checkbox"
+                    info = {remember}
+                    onChange = {changeCheckbox("remember")} 
+                    value="" 
+                    id="defaultCheck1" />
+                    <label className="form-check-label"> Remeber this card</label>
+                </div>
                 <button 
                 onClick={onSubmit}
                 className="btn btn-success btn-block">Submit</button>
@@ -165,18 +193,15 @@ const Payment = ({
         );
       };
 
-
-
-    return(
-        <div>
-            {successMessage()}
-            {errorMessage()}
-            {PymentForm()}
+   return(
+       <div>
+           <h3>Your bill is {getAmount()}</h3>
+           {PymentForm()}
             <p className="text-white text-center">
                 {JSON.stringify(info)}
             </p>
-        </div>
-    )
+       </div>
+   )
 }
 
 export default Payment;
